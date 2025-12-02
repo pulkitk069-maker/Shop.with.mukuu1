@@ -4,13 +4,45 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
-import { supabase, Product, Category } from '../../lib/supabase';
+// Firebase Imports
+import { 
+  collection, 
+  getDocs, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc 
+} from 'firebase/firestore';
+import { db } from '../../firebase';
+
+// Interfaces define kar rahe hain
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  category_id: string | null;
+  description: string;
+  price: number;
+  stock_quantity: number;
+  images: string[];
+  is_featured: boolean;
+  is_active: boolean;
+  created_at?: any;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  display_order: number;
+}
 
 export function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
     name: '',
     category_id: '',
@@ -27,10 +59,29 @@ export function AdminProducts() {
   }, []);
 
   const loadData = async () => {
-    const { data: prods } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-    const { data: cats } = await supabase.from('categories').select('*').order('display_order');
-    if (prods) setProducts(prods);
-    if (cats) setCategories(cats);
+    setLoading(true);
+    try {
+      // Products fetch karna
+      const productsSnapshot = await getDocs(collection(db, 'products'));
+      const prodsData = productsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Product[];
+
+      // Categories fetch karna
+      const categoriesSnapshot = await getDocs(collection(db, 'categories'));
+      const catsData = categoriesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Category[];
+
+      setProducts(prodsData);
+      setCategories(catsData);
+    } catch (error) {
+      console.error("Error loading data:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleOpenModal = (product?: Product) => {
@@ -66,6 +117,8 @@ export function AdminProducts() {
     e.preventDefault();
 
     const slug = formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    
+    // Data tayyar karna
     const productData = {
       name: formData.name,
       slug,
@@ -76,22 +129,24 @@ export function AdminProducts() {
       images: formData.images.filter(img => img.trim() !== ''),
       is_featured: formData.is_featured,
       is_active: formData.is_active,
+      updated_at: new Date().toISOString()
     };
 
     try {
       if (editingProduct) {
-        const { error } = await supabase
-          .from('products')
-          .update({ ...productData, updated_at: new Date().toISOString() })
-          .eq('id', editingProduct.id);
-        if (error) throw error;
+        // Update Product (Firebase)
+        const productRef = doc(db, 'products', editingProduct.id);
+        await updateDoc(productRef, productData);
       } else {
-        const { error } = await supabase.from('products').insert(productData);
-        if (error) throw error;
+        // Add New Product (Firebase)
+        await addDoc(collection(db, 'products'), {
+          ...productData,
+          created_at: new Date().toISOString()
+        });
       }
 
       setShowModal(false);
-      loadData();
+      loadData(); // List refresh karo
     } catch (error) {
       console.error('Error saving product:', error);
       alert('Failed to save product');
@@ -102,8 +157,8 @@ export function AdminProducts() {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const { error } = await supabase.from('products').delete().eq('id', id);
-      if (error) throw error;
+      // Delete Product (Firebase)
+      await deleteDoc(doc(db, 'products', id));
       loadData();
     } catch (error) {
       console.error('Error deleting product:', error);
@@ -141,7 +196,9 @@ export function AdminProducts() {
         </Button>
       </div>
 
-      {products.length === 0 ? (
+      {loading ? (
+         <div className="text-center py-10">Loading products...</div>
+      ) : products.length === 0 ? (
         <Card className="p-12 text-center">
           <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-700 mb-2">No products yet</h3>
