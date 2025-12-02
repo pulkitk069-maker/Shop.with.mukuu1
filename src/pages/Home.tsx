@@ -2,10 +2,38 @@ import { useEffect, useState } from 'react';
 import { Star, Gift, Sparkles, Heart, ArrowRight } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { supabase, Category, Product, Testimonial } from '../lib/supabase';
+// Firebase Imports
+import { collection, getDocs, query, where, limit, orderBy } from 'firebase/firestore';
+import { db } from '../firebase';
 
 interface HomeProps {
   onNavigate: (page: string) => void;
+}
+
+// Types define kar rahe hain
+interface Category {
+  id: string;
+  name: string;
+  image_url?: string;
+  description?: string;
+  display_order: number;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  images: string[];
+  is_featured: boolean;
+  is_active: boolean;
+}
+
+interface Testimonial {
+  id: string;
+  customer_name: string;
+  rating: number;
+  comment: string;
+  is_featured: boolean;
 }
 
 export function Home({ onNavigate }: HomeProps) {
@@ -18,32 +46,62 @@ export function Home({ onNavigate }: HomeProps) {
   }, []);
 
   const loadData = async () => {
-    const { data: cats } = await supabase
-      .from('categories')
-      .select('*')
-      .order('display_order');
+    try {
+      // 1. Categories Fetch Karna
+      const catsSnapshot = await getDocs(collection(db, 'categories'));
+      const catsData = catsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Category[];
+      // Sort manually (display_order ke hisaab se)
+      catsData.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+      setCategories(catsData);
 
-    const { data: products } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_featured', true)
-      .eq('is_active', true)
-      .limit(4);
+      // 2. Featured Products Fetch Karna
+      // Note: 'where' queries ke liye Firestore mein index chahiye hota hai.
+      // Agar index error aaye to hum client-side filter kar lenge fallback ke liye.
+      try {
+        const prodsRef = collection(db, 'products');
+        const q = query(prodsRef, where('is_featured', '==', true), where('is_active', '==', true), limit(4));
+        const prodsSnapshot = await getDocs(q);
+        const prodsData = prodsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Product[];
+        setFeaturedProducts(prodsData);
+      } catch (e) {
+        // Fallback: Agar index nahi hai to sab laake filter karo
+        const allProds = await getDocs(collection(db, 'products'));
+        const filtered = allProds.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as Product))
+          .filter(p => p.is_featured && p.is_active)
+          .slice(0, 4);
+        setFeaturedProducts(filtered);
+      }
 
-    const { data: tests } = await supabase
-      .from('testimonials')
-      .select('*')
-      .eq('is_featured', true)
-      .order('created_at', { ascending: false })
-      .limit(3);
+      // 3. Testimonials Fetch Karna (Agar collection ho to)
+      try {
+        const testRef = collection(db, 'testimonials');
+        const q = query(testRef, where('is_featured', '==', true), limit(3));
+        const testSnapshot = await getDocs(q);
+        const testData = testSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Testimonial[];
+        setTestimonials(testData);
+      } catch (e) {
+        console.log("Testimonials collection not created yet, showing defaults or empty.");
+        // Optional: Yahan hardcoded testimonials dikha sakte hain agar database khali hai
+      }
 
-    if (cats) setCategories(cats);
-    if (products) setFeaturedProducts(products);
-    if (tests) setTestimonials(tests);
+    } catch (error) {
+      console.error("Error loading home data:", error);
+    }
   };
 
   return (
     <div className="min-h-screen">
+      {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-pink-100 via-rose-100 to-orange-100 py-20 px-4 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 left-10 w-72 h-72 bg-pink-400 rounded-full blur-3xl" />
@@ -101,6 +159,7 @@ export function Home({ onNavigate }: HomeProps) {
         </div>
       </section>
 
+      {/* Categories Section */}
       <section className="py-20 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
@@ -139,6 +198,7 @@ export function Home({ onNavigate }: HomeProps) {
         </div>
       </section>
 
+      {/* Featured Products Section */}
       {featuredProducts.length > 0 && (
         <section className="py-20 px-4 bg-gradient-to-br from-pink-50 to-orange-50">
           <div className="max-w-7xl mx-auto">
@@ -150,7 +210,10 @@ export function Home({ onNavigate }: HomeProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {featuredProducts.map(product => (
                 <Card key={product.id} hover>
-                  <div className="cursor-pointer group">
+                  <div 
+                    className="cursor-pointer group"
+                    onClick={() => onNavigate('shop')} // Click karne par Shop pe le jao
+                  >
                     <div className="aspect-square bg-gray-100 overflow-hidden rounded-t-2xl">
                       {product.images && product.images.length > 0 ? (
                         <img
@@ -165,7 +228,7 @@ export function Home({ onNavigate }: HomeProps) {
                       )}
                     </div>
                     <div className="p-4">
-                      <h3 className="font-semibold text-gray-800 mb-2">{product.name}</h3>
+                      <h3 className="font-semibold text-gray-800 mb-2 line-clamp-1">{product.name}</h3>
                       <p className="text-2xl font-bold text-pink-600">₹{product.price}</p>
                     </div>
                   </div>
@@ -182,6 +245,7 @@ export function Home({ onNavigate }: HomeProps) {
         </section>
       )}
 
+      {/* Testimonials Section */}
       {testimonials.length > 0 && (
         <section className="py-20 px-4 bg-white">
           <div className="max-w-7xl mx-auto">
@@ -233,4 +297,4 @@ export function Home({ onNavigate }: HomeProps) {
       </section>
     </div>
   );
-}
+              }
