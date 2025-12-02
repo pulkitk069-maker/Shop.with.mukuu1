@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react';
-import { LayoutDashboard, Package, ShoppingCart, Gift, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Gift, LogOut, Menu, X, Home } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/Button';
 
@@ -21,7 +21,13 @@ export function AdminLayout({ children, currentPage, onNavigate }: AdminLayoutPr
   ];
 
   const handleSignOut = async () => {
-    await signOut();
+    try {
+      await signOut();
+      // Logout hone ke baad user ko Admin Login page par bhej rahe hain
+      onNavigate('admin');
+    } catch (error) {
+      console.error("Admin SignOut failed:", error);
+    }
   };
 
   return (
@@ -53,6 +59,18 @@ export function AdminLayout({ children, currentPage, onNavigate }: AdminLayoutPr
         </div>
 
         <nav className="px-4 space-y-2">
+          {/* Home Link add kiya taki main site par ja saken */}
+          <button
+            onClick={() => {
+              onNavigate('home');
+              setIsSidebarOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-600 hover:bg-gray-100"
+          >
+            <Home className="w-5 h-5" />
+            <span className="font-medium">Go to Shop</span>
+          </button>
+          
           {menuItems.map(item => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
