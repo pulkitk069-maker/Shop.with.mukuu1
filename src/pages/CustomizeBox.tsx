@@ -3,7 +3,18 @@ import { Check, ChevronRight, Gift, Heart, Sparkles } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
-import { supabase, Product } from '../lib/supabase';
+// Firebase Imports
+import { collection, addDoc, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
+
+// Product type definition
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  images: string[];
+  is_active: boolean;
+}
 
 const steps = ['Choose Theme', 'Select Items', 'Add Message', 'Contact Info'];
 
@@ -38,11 +49,20 @@ export function CustomizeBox() {
   }, []);
 
   const loadProducts = async () => {
-    const { data } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true);
-    if (data) setProducts(data);
+    try {
+      // Firebase se products lana
+      const querySnapshot = await getDocs(collection(db, 'products'));
+      const prodsData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Product[];
+      
+      // Sirf active products filter karna
+      const activeProducts = prodsData.filter(p => p.is_active !== false);
+      setProducts(activeProducts);
+    } catch (error) {
+      console.error("Error loading products:", error);
+    }
   };
 
   const handleNext = () => {
@@ -69,7 +89,8 @@ export function CustomizeBox() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('custom_gift_boxes').insert({
+      // Firebase mein request save karna
+      await addDoc(collection(db, 'custom_gift_boxes'), {
         customer_name: formData.customerName,
         customer_email: formData.customerEmail,
         customer_phone: formData.customerPhone,
@@ -77,10 +98,10 @@ export function CustomizeBox() {
         box_theme: formData.theme,
         custom_message: formData.customMessage,
         budget_range: formData.budgetRange,
-        status: 'pending'
+        status: 'pending',
+        created_at: new Date().toISOString() // Zaroori hai sorting ke liye
       });
 
-      if (error) throw error;
       setIsSuccess(true);
     } catch (error) {
       console.error('Error submitting:', error);
@@ -329,4 +350,4 @@ export function CustomizeBox() {
       </div>
     </div>
   );
-}
+                        }
