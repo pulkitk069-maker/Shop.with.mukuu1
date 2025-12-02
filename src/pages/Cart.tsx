@@ -5,7 +5,9 @@ import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { useCart } from '../context/CartContext';
-import { supabase } from '../lib/supabase';
+// Firebase Imports
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export function Cart() {
   const { cart, removeFromCart, updateQuantity, clearCart, getTotalPrice } = useCart();
@@ -29,7 +31,8 @@ export function Cart() {
         price: item.price,
       }));
 
-      const { error } = await supabase.from('orders').insert({
+      // Firebase mein Order save karna
+      await addDoc(collection(db, 'orders'), {
         customer_name: customerInfo.name,
         customer_email: customerInfo.email,
         customer_phone: customerInfo.phone,
@@ -38,17 +41,17 @@ export function Cart() {
         total_amount: getTotalPrice(),
         notes: customerInfo.notes,
         status: 'pending',
+        created_at: new Date().toISOString(), // Ye zaroori hai sorting ke liye
       });
-
-      if (error) throw error;
 
       alert('Order placed successfully! We will contact you soon.');
       clearCart();
       setShowCheckout(false);
       setCustomerInfo({ name: '', email: '', phone: '', address: '', notes: '' });
 
+      // WhatsApp par le jana
       window.open(
-        `https://wa.me/1234567890?text=Hi! I just placed an order on shop.with.mukuu. Order total: ₹${getTotalPrice()}`,
+        `https://wa.me/919876543210?text=Hi! I just placed an order on shop.with.mukuu. Order total: ₹${getTotalPrice()}`,
         '_blank'
       );
     } catch (error) {
