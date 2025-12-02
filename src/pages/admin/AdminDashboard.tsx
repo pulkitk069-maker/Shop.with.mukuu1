@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Package, ShoppingCart, Users, DollarSign, TrendingUp, Gift } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
-import { supabase } from '../../lib/supabase';
+// Firebase Imports
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../../firebase';
 
 export function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -17,28 +19,58 @@ export function AdminDashboard() {
   }, []);
 
   const loadStats = async () => {
-    const { data: products } = await supabase.from('products').select('*', { count: 'exact' });
+    try {
+      // 1. Products Fetch Karna
+      const productsSnapshot = await getDocs(collection(db, 'products'));
+      const totalProducts = productsSnapshot.size;
 
-    const { data: orders } = await supabase.from('orders').select('*');
+      // 2. Orders Fetch Karna (Total Orders & Revenue)
+      let totalOrders = 0;
+      let totalRevenue = 0;
+      let pendingOrders = 0;
 
-    const { data: pendingOrders } = await supabase
-      .from('orders')
-      .select('*', { count: 'exact' })
-      .eq('status', 'pending');
+      // Note: Try-catch block taaki agar 'orders' collection na ho to crash na kare
+      try {
+        const ordersSnapshot = await getDocs(collection(db, 'orders'));
+        totalOrders = ordersSnapshot.size;
 
-    const { data: customBoxes } = await supabase
-      .from('custom_gift_boxes')
-      .select('*', { count: 'exact' });
+        // Revenue Calculation
+        ordersSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          // Total Revenue jodna (Ensure number format)
+          if (data.total_amount) {
+            totalRevenue += Number(data.total_amount);
+          }
+          // Pending orders ginnna
+          if (data.status === 'pending') {
+            pendingOrders++;
+          }
+        });
+      } catch (e) {
+        console.log("Orders collection abhi nahi bana hai (New Store)");
+      }
 
-    const totalRevenue = orders?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
+      // 3. Custom Box Requests Fetch Karna
+      let customBoxRequests = 0;
+      try {
+        const customBoxesSnapshot = await getDocs(collection(db, 'custom_gift_boxes'));
+        customBoxRequests = customBoxesSnapshot.size;
+      } catch (e) {
+        console.log("Custom Boxes collection abhi nahi bana hai");
+      }
 
-    setStats({
-      totalProducts: products?.length || 0,
-      totalOrders: orders?.length || 0,
-      pendingOrders: pendingOrders?.length || 0,
-      totalRevenue,
-      customBoxRequests: customBoxes?.length || 0,
-    });
+      // State Update Karna
+      setStats({
+        totalProducts,
+        totalOrders,
+        pendingOrders, // Loop se count kiya hua
+        totalRevenue,
+        customBoxRequests,
+      });
+
+    } catch (error) {
+      console.error('Error loading dashboard stats:', error);
+    }
   };
 
   const statCards = [
