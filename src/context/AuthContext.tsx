@@ -1,5 +1,5 @@
-Import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { auth } from '../firebase'; // Humari updated file se import
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'; // FIX: 'import' small 'i' kiya
+import { auth } from '../firebase';
 import { 
   signInWithEmailAndPassword, 
   signOut as firebaseSignOut, 
