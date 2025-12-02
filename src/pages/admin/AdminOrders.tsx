@@ -3,33 +3,85 @@ import { Package, Eye, Check, X } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
-import { supabase, Order } from '../../lib/supabase';
+// Firebase Imports
+import { collection, getDocs, updateDoc, doc, query, orderBy } from 'firebase/firestore';
+import { db } from '../../firebase';
+
+// Interfaces define kar rahe hain taaki TypeScript khush rahe
+interface OrderItem {
+  product_name: string;
+  quantity: number;
+  price: number;
+}
+
+interface Order {
+  id: string;
+  created_at: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  customer_address: string;
+  total_amount: number;
+  status: string;
+  order_items: OrderItem[];
+  notes?: string;
+  updated_at?: string;
+}
 
 export function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadOrders();
   }, []);
 
   const loadOrders = async () => {
-    const { data } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (data) setOrders(data);
+    try {
+      setLoading(true);
+      // Firebase se orders lana (Newest first)
+      const ordersRef = collection(db, 'orders');
+      // Note: Agar 'created_at' index nahi bana hoga to shayad console me warning aaye
+      // Par abhi ke liye ye simple query chal jayegi
+      const q = query(ordersRef, orderBy('created_at', 'desc'));
+      
+      const snapshot = await getDocs(q);
+      const ordersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Order[];
+      
+      setOrders(ordersData);
+    } catch (error) {
+      console.error("Error loading orders:", error);
+      // Fallback: Agar index error aaye to bina sorting ke load karo
+      try {
+        const snapshot = await getDocs(collection(db, 'orders'));
+        const ordersData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Order[];
+        setOrders(ordersData);
+      } catch (e) {
+        console.error("Orders load failed completely");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', orderId);
-      if (error) throw error;
-      loadOrders();
+      // Firebase update
+      const orderRef = doc(db, 'orders', orderId);
+      await updateDoc(orderRef, { 
+        status, 
+        updated_at: new Date().toISOString() 
+      });
+      
+      loadOrders(); // List refresh karo
       if (selectedOrder?.id === orderId) {
         setSelectedOrder({ ...selectedOrder, status } as Order);
       }
@@ -62,7 +114,9 @@ export function AdminOrders() {
         <p className="text-gray-600">Manage customer orders</p>
       </div>
 
-      {orders.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-12">Loading orders...</div>
+      ) : orders.length === 0 ? (
         <Card className="p-12 text-center">
           <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-700 mb-2">No orders yet</h3>
