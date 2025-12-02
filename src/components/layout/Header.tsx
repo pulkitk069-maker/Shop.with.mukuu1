@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ShoppingCart, Menu, X, Heart, User } from 'lucide-react';
+import { ShoppingCart, Menu, X, Heart, User, LogIn } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface HeaderProps {
   currentPage: string;
@@ -10,6 +11,7 @@ interface HeaderProps {
 export function Header({ currentPage, onNavigate }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { getTotalItems } = useCart();
+  const { user } = useAuth(); // User login status check kar rahe hain
 
   const navItems = [
     { name: 'Home', path: 'home' },
@@ -18,6 +20,16 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
     { name: 'About', path: 'about' },
     { name: 'Contact', path: 'contact' },
   ];
+
+  const handleUserNavigation = () => {
+    if (user) {
+      // Agar login hai, to My Orders par le jao
+      onNavigate('my-orders');
+    } else {
+      // Agar login nahi hai, to Login page par le jao
+      onNavigate('login');
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm shadow-sm">
@@ -50,6 +62,7 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
             <button className="p-2 hover:bg-pink-50 rounded-full transition-colors hidden md:block">
               <Heart className="w-6 h-6 text-gray-600" />
             </button>
+            
             <button
               onClick={() => onNavigate('cart')}
               className="relative p-2 hover:bg-pink-50 rounded-full transition-colors"
@@ -61,12 +74,20 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
                 </span>
               )}
             </button>
+
+            {/* Smart User Button */}
             <button
-              onClick={() => onNavigate('admin')}
+              onClick={handleUserNavigation}
               className="p-2 hover:bg-pink-50 rounded-full transition-colors hidden md:block"
+              title={user ? "My Orders" : "Login"}
             >
-              <User className="w-6 h-6 text-gray-600" />
+              {user ? (
+                <User className="w-6 h-6 text-gray-600" />
+              ) : (
+                <LogIn className="w-6 h-6 text-gray-600" />
+              )}
             </button>
+
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="p-2 md:hidden hover:bg-pink-50 rounded-full transition-colors"
@@ -100,18 +121,20 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
                 {item.name}
               </button>
             ))}
+            
+            {/* Mobile Menu Smart Button */}
             <button
               onClick={() => {
-                onNavigate('admin');
+                handleUserNavigation();
                 setIsMenuOpen(false);
               }}
               className="block w-full text-left px-4 py-3 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors"
             >
-              Admin
+              {user ? 'My Orders & Account' : 'Login / Sign Up'}
             </button>
           </nav>
         </div>
       )}
     </header>
   );
-}
+                  }
