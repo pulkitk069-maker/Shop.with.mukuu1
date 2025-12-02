@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Search, Filter, Gift, ShoppingCart } from 'lucide-react';
+import { Search, Filter, Gift, ShoppingCart, Zap } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 // Firebase imports
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase'; // Ye wo file hai jo humne step 2 mein banayi thi
+import { db } from '../firebase';
 import { useCart } from '../context/CartContext';
 
-// Types define kar rahe hain taki error na aaye
+// Types define kar rahe hain
 interface Product {
   id: string;
   name: string;
@@ -27,7 +27,12 @@ interface Category {
   display_order: number;
 }
 
-export function Shop() {
+// UPDATE: Prop define kiya navigation ke liye
+interface ShopProps {
+  onNavigate?: (page: string) => void;
+}
+
+export function Shop({ onNavigate }: ShopProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -92,6 +97,16 @@ export function Shop() {
       price: product.price,
       image: product.images?.[0] || ''
     });
+  };
+
+  // UPDATE: Direct Buy Now Function
+  const handleBuyNow = (product: Product) => {
+    // 1. Cart mein add karo
+    handleAddToCart(product);
+    // 2. Agar navigation function hai, to seedha Cart page par le jao
+    if (onNavigate) {
+      onNavigate('cart');
+    }
   };
 
   return (
@@ -169,7 +184,7 @@ export function Shop() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map(product => (
               <Card key={product.id} hover>
-                <div className="group">
+                <div className="group flex flex-col h-full">
                   <div className="aspect-square bg-gray-100 overflow-hidden rounded-t-2xl relative">
                     {product.images && product.images.length > 0 ? (
                       <img
@@ -191,25 +206,40 @@ export function Shop() {
                     )}
                   </div>
 
-                  <div className="p-4">
+                  <div className="p-4 flex flex-col flex-1">
                     <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">
                       {product.name}
                     </h3>
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2 flex-1">
                       {product.description}
                     </p>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-4">
                       <span className="text-2xl font-bold text-pink-600">₹{product.price}</span>
+                    </div>
+
+                    {/* UPDATE: Added Buttons Grid */}
+                    <div className="grid grid-cols-2 gap-2">
                       <Button
                         size="sm"
+                        variant="outline"
                         onClick={() => handleAddToCart(product)}
                         disabled={product.stock_quantity === 0}
+                        className="flex items-center justify-center gap-1"
                       >
-                        <ShoppingCart className="w-4 h-4" />
+                        <ShoppingCart className="w-4 h-4" /> Cart
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleBuyNow(product)}
+                        disabled={product.stock_quantity === 0}
+                        className="flex items-center justify-center gap-1 bg-gradient-to-r from-pink-500 to-rose-500"
+                      >
+                        <Zap className="w-4 h-4 fill-current" /> Buy Now
                       </Button>
                     </div>
+
                     {product.stock_quantity > 0 && product.stock_quantity < 5 && (
-                      <p className="text-xs text-orange-600 mt-2">
+                      <p className="text-xs text-orange-600 mt-2 text-center">
                         Only {product.stock_quantity} left in stock!
                       </p>
                     )}
