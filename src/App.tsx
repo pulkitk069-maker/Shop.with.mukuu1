@@ -17,30 +17,6 @@ import { AdminProducts } from './pages/admin/AdminProducts';
 import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminCustomBoxes } from './pages/admin/AdminCustomBoxes';
 
-// --- CUSTOM BACKGROUND PATTERN COMPONENT ---
-const ButterflyPattern = () => (
-  <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-    {/* Base Gradient */}
-    <div className="absolute inset-0 bg-gradient-to-br from-[#fff0f5] via-[#ffe4e6] to-[#fff5e6]"></div>
-    
-    {/* Butterfly Texture Overlay */}
-    <svg className="absolute inset-0 w-full h-full opacity-[0.15]" xmlns="http://www.w3.org/2000/svg">
-      <pattern id="butterfly-pattern" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
-        {/* Butterfly Shape */}
-        <path d="M14.5 12.5C14.5 9 17 6 20 6C23 6 25 8 25 11C25 14 23 16 20 16C17 16 14.5 12.5 14.5 12.5ZM14.5 12.5C14.5 16 12 19 9 19C6 19 4 17 4 14C4 11 6 9 9 9C12 9 14.5 12.5 14.5 12.5Z" 
-              fill="#ec4899" transform="rotate(-15) translate(10,10) scale(1.5)" />
-        {/* Flower Shape */}
-        <path d="M55 55 Q60 50 65 55 Q70 60 65 65 Q60 70 55 65 Q50 70 45 65 Q40 60 45 55 Q50 50 55 55" 
-              fill="#fb923c" transform="scale(0.8)" opacity="0.8"/>
-      </pattern>
-      <rect x="0" y="0" width="100%" height="100%" fill="url(#butterfly-pattern)" />
-    </svg>
-
-    {/* Soft Overlay to blend everything */}
-    <div className="absolute inset-0 bg-white/30 backdrop-blur-[1px]"></div>
-  </div>
-);
-
 function AppContent() {
   const [currentPage, setCurrentPage] = useState('home');
   const [adminPage, setAdminPage] = useState('dashboard');
@@ -48,11 +24,10 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fff0f5] flex items-center justify-center relative">
-        <ButterflyPattern />
-        <div className="text-center z-10">
-          <div className="w-16 h-16 border-4 border-[#ff6b81] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#ff6b81] font-dancing text-xl font-bold">Loading Magic...</p>
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-pink-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500 font-medium">Loading...</p>
         </div>
       </div>
     );
@@ -105,16 +80,17 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col font-sans text-gray-800 relative">
-      {/* Background is now a fixed layer behind everything */}
-      <ButterflyPattern />
-
-      {/* Main Content sits on top of the background */}
-      <div className="z-10 flex flex-col min-h-screen">
+    // Clean, Fast, and Beautiful Pastel Gradient
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#fff0f5] via-[#fff5f7] to-[#fff5e6] font-sans text-gray-800 selection:bg-pink-100">
+      
+      <div className="flex flex-col min-h-screen">
         <Header currentPage={currentPage} onNavigate={setCurrentPage} />
+        
+        {/* Added smooth fade-in animation for page transitions */}
         <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
           {renderPage()}
         </main>
+        
         <Footer />
       </div>
       
