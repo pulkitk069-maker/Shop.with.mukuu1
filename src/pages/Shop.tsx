@@ -3,8 +3,29 @@ import { Search, Filter, Gift, ShoppingCart } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
-import { supabase, Category, Product } from '../lib/supabase';
+// Firebase imports
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase'; // Ye wo file hai jo humne step 2 mein banayi thi
 import { useCart } from '../context/CartContext';
+
+// Types define kar rahe hain taki error na aaye
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  images: string[];
+  category_id: string;
+  stock_quantity: number;
+  is_active: boolean;
+  created_at?: any;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  display_order: number;
+}
 
 export function Shop() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -13,25 +34,40 @@ export function Shop() {
   const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState<string>('all');
   const { addToCart } = useCart();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    const { data: cats } = await supabase
-      .from('categories')
-      .select('*')
-      .order('display_order');
+    try {
+      setLoading(true);
+      
+      // 1. Categories lana Firebase se
+      const catsSnapshot = await getDocs(collection(db, 'categories'));
+      const catsData = catsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Category[];
 
-    const { data: prods } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
+      // 2. Products lana Firebase se
+      const prodsSnapshot = await getDocs(collection(db, 'products'));
+      const prodsData = prodsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Product[];
 
-    if (cats) setCategories(cats);
-    if (prods) setProducts(prods);
+      // Sirf active products dikhana
+      const activeProducts = prodsData.filter(p => p.is_active !== false);
+
+      setCategories(catsData);
+      setProducts(activeProducts);
+    } catch (error) {
+      console.error("Error loading data:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredProducts = products.filter(product => {
@@ -66,6 +102,7 @@ export function Shop() {
           <p className="text-gray-600 text-lg">Discover premium accessories and gift packs</p>
         </div>
 
+        {/* Search and Filters */}
         <div className="mb-8 flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -106,9 +143,10 @@ export function Shop() {
           </div>
         </div>
 
+        {/* Results Count */}
         <div className="mb-6 flex items-center justify-between">
           <p className="text-gray-600">
-            Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
+            {loading ? 'Loading products...' : `Showing ${filteredProducts.length} product${filteredProducts.length !== 1 ? 's' : ''}`}
           </p>
           <div className="flex gap-2">
             <Filter className="w-5 h-5 text-gray-400" />
@@ -116,7 +154,12 @@ export function Shop() {
           </div>
         </div>
 
-        {filteredProducts.length === 0 ? (
+        {/* Product Grid */}
+        {loading ? (
+           <div className="flex justify-center p-12">
+             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600"></div>
+           </div>
+        ) : filteredProducts.length === 0 ? (
           <Card className="p-12 text-center">
             <Gift className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-700 mb-2">No products found</h3>
