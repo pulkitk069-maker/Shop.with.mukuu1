@@ -41,7 +41,7 @@ function AppContent() {
     const renderAdminPage = () => {
       switch (adminPage) {
         case 'dashboard':
-          // UPDATE: Yahan humne 'onNavigate' pass kiya hai
+          // Admin Dashboard mein navigation enable hai
           return <AdminDashboard onNavigate={setAdminPage} />;
         case 'products':
           return <AdminProducts />;
@@ -66,7 +66,8 @@ function AppContent() {
       case 'home':
         return <Home onNavigate={setCurrentPage} />;
       case 'shop':
-        return <Shop />;
+        // UPDATE: Shop ko 'onNavigate' pass kiya taaki wo page badal sake
+        return <Shop onNavigate={setCurrentPage} />;
       case 'customize':
         return <CustomizeBox />;
       case 'about':
