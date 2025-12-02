@@ -2,10 +2,16 @@ import { useEffect, useState } from 'react';
 import { Package, ShoppingCart, Users, DollarSign, TrendingUp, Gift } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 // Firebase Imports
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 
-export function AdminDashboard() {
+// Prop receive karne ke liye interface define kiya
+interface AdminDashboardProps {
+  onNavigate: (page: string) => void;
+}
+
+// 'onNavigate' ko yahan receive kiya
+export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalOrders: 0,
@@ -24,30 +30,26 @@ export function AdminDashboard() {
       const productsSnapshot = await getDocs(collection(db, 'products'));
       const totalProducts = productsSnapshot.size;
 
-      // 2. Orders Fetch Karna (Total Orders & Revenue)
+      // 2. Orders Fetch Karna
       let totalOrders = 0;
       let totalRevenue = 0;
       let pendingOrders = 0;
 
-      // Note: Try-catch block taaki agar 'orders' collection na ho to crash na kare
       try {
         const ordersSnapshot = await getDocs(collection(db, 'orders'));
         totalOrders = ordersSnapshot.size;
 
-        // Revenue Calculation
         ordersSnapshot.docs.forEach(doc => {
           const data = doc.data();
-          // Total Revenue jodna (Ensure number format)
           if (data.total_amount) {
             totalRevenue += Number(data.total_amount);
           }
-          // Pending orders ginnna
           if (data.status === 'pending') {
             pendingOrders++;
           }
         });
       } catch (e) {
-        console.log("Orders collection abhi nahi bana hai (New Store)");
+        console.log("Orders collection empty");
       }
 
       // 3. Custom Box Requests Fetch Karna
@@ -56,14 +58,13 @@ export function AdminDashboard() {
         const customBoxesSnapshot = await getDocs(collection(db, 'custom_gift_boxes'));
         customBoxRequests = customBoxesSnapshot.size;
       } catch (e) {
-        console.log("Custom Boxes collection abhi nahi bana hai");
+        console.log("Custom Boxes collection empty");
       }
 
-      // State Update Karna
       setStats({
         totalProducts,
         totalOrders,
-        pendingOrders, // Loop se count kiya hua
+        pendingOrders,
         totalRevenue,
         customBoxRequests,
       });
@@ -81,6 +82,7 @@ export function AdminDashboard() {
       color: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-100',
       textColor: 'text-blue-600',
+      targetPage: 'products' // Click karne par Products page
     },
     {
       title: 'Total Orders',
@@ -89,6 +91,7 @@ export function AdminDashboard() {
       color: 'from-green-500 to-green-600',
       bgColor: 'bg-green-100',
       textColor: 'text-green-600',
+      targetPage: 'orders' // Click karne par Orders page
     },
     {
       title: 'Pending Orders',
@@ -97,6 +100,7 @@ export function AdminDashboard() {
       color: 'from-orange-500 to-orange-600',
       bgColor: 'bg-orange-100',
       textColor: 'text-orange-600',
+      targetPage: 'orders' // Ye bhi Orders page par le jayega
     },
     {
       title: 'Total Revenue',
@@ -105,6 +109,7 @@ export function AdminDashboard() {
       color: 'from-pink-500 to-rose-500',
       bgColor: 'bg-pink-100',
       textColor: 'text-pink-600',
+      targetPage: 'orders'
     },
     {
       title: 'Custom Box Requests',
@@ -113,6 +118,7 @@ export function AdminDashboard() {
       color: 'from-purple-500 to-purple-600',
       bgColor: 'bg-purple-100',
       textColor: 'text-purple-600',
+      targetPage: 'custom-boxes' // Custom Boxes page
     },
   ];
 
@@ -125,17 +131,25 @@ export function AdminDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {statCards.map((stat, index) => (
-          <Card key={index} hover>
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
-                  <stat.icon className={`w-6 h-6 ${stat.textColor}`} />
+          // Yahan 'onClick' aur styling add ki hai
+          <div 
+            key={index}
+            onClick={() => onNavigate(stat.targetPage)}
+            className="cursor-pointer transition-transform hover:scale-105"
+          >
+            <Card hover>
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
+                    <stat.icon className={`w-6 h-6 ${stat.textColor}`} />
+                  </div>
                 </div>
+                <h3 className="text-gray-600 text-sm font-medium mb-1">{stat.title}</h3>
+                <p className="text-3xl font-bold text-gray-800">{stat.value}</p>
+                <p className="text-xs text-gray-400 mt-2">Tap to view details &rarr;</p>
               </div>
-              <h3 className="text-gray-600 text-sm font-medium mb-1">{stat.title}</h3>
-              <p className="text-3xl font-bold text-gray-800">{stat.value}</p>
-            </div>
-          </Card>
+            </Card>
+          </div>
         ))}
       </div>
 
