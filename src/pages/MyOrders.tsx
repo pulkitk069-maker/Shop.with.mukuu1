@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, Calendar, MapPin, ChevronDown, ChevronUp, ShoppingBag } from 'lucide-react';
+import { Package, Calendar, MapPin, ChevronDown, ChevronUp, ShoppingBag, LogOut } from 'lucide-react'; // LogOut icon import kiya
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
@@ -19,14 +19,14 @@ interface Order {
   total_amount: number;
   customer_address: string;
   order_items: OrderItem[];
-  order_code?: string; // We will add this later
+  order_code?: string;
 }
 
 export function MyOrders({ onNavigate }: { onNavigate: (page: string) => void }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, signOut } = useAuth(); // signOut function yahan se liya
 
   useEffect(() => {
     if (user) {
@@ -38,7 +38,6 @@ export function MyOrders({ onNavigate }: { onNavigate: (page: string) => void })
 
   const loadOrders = async () => {
     try {
-      // Query: Get orders where user_id matches current user
       const q = query(
         collection(db, 'orders'),
         where('user_id', '==', user?.uid),
@@ -59,7 +58,6 @@ export function MyOrders({ onNavigate }: { onNavigate: (page: string) => void })
         const q2 = query(collection(db, 'orders'), where('user_id', '==', user?.uid));
         const snapshot = await getDocs(q2);
         const ordersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Order[];
-        // Client side sort
         ordersData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         setOrders(ordersData);
       } catch (e) {
@@ -67,6 +65,15 @@ export function MyOrders({ onNavigate }: { onNavigate: (page: string) => void })
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      onNavigate('home'); // Logout ke baad Home par bhejo
+    } catch (error) {
+      console.error("Logout failed", error);
     }
   };
 
@@ -97,11 +104,21 @@ export function MyOrders({ onNavigate }: { onNavigate: (page: string) => void })
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">My Orders</h1>
-          <Button variant="outline" onClick={() => onNavigate('shop')}>
-            Continue Shopping
-          </Button>
+        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">My Orders</h1>
+            {user.displayName && <p className="text-gray-600">Welcome, {user.displayName}</p>}
+          </div>
+          
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => onNavigate('shop')}>
+              Continue Shopping
+            </Button>
+            {/* NEW SIGN OUT BUTTON */}
+            <Button variant="outline" onClick={handleLogout} className="text-red-600 hover:bg-red-50 border-red-200">
+              <LogOut className="w-4 h-4 mr-2" /> Sign Out
+            </Button>
+          </div>
         </div>
 
         {orders.length === 0 ? (
@@ -186,4 +203,4 @@ export function MyOrders({ onNavigate }: { onNavigate: (page: string) => void })
       </div>
     </div>
   );
-      }
+                 }
