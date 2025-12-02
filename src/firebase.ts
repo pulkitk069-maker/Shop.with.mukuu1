@@ -1,8 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth"; // Ye line add ki hai
+import { getAuth } from "firebase/auth"; // Ye line bahut zaroori hai
 
-// Aapki keys (Same rahengi)
+// Aapki Keys
 const firebaseConfig = {
   apiKey: "AIzaSyCFEqycZonzVZnfRBjBUZpx8fA1Vrz3m5A",
   authDomain: "shop-with-mukuu.firebaseapp.com",
@@ -12,6 +12,9 @@ const firebaseConfig = {
   appId: "1:814428951768:web:a9e43db094cbfa7410f3ad"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// Database aur Auth export karna (Agar ye nahi hoga to white screen aayegi)
 export const db = getFirestore(app);
-export const auth = getAuth(app); // Ye naya export hai login ke liye
+export const auth = getAuth(app);
