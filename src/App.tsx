@@ -10,6 +10,8 @@ import { CustomizeBox } from './pages/CustomizeBox';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { Cart } from './pages/Cart';
+import { Login } from './pages/Login';     // New Import
+import { MyOrders } from './pages/MyOrders'; // New Import
 import { AdminLogin } from './pages/admin/AdminLogin';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -41,7 +43,6 @@ function AppContent() {
     const renderAdminPage = () => {
       switch (adminPage) {
         case 'dashboard':
-          // Admin Dashboard mein navigation enable hai
           return <AdminDashboard onNavigate={setAdminPage} />;
         case 'products':
           return <AdminProducts />;
@@ -66,7 +67,6 @@ function AppContent() {
       case 'home':
         return <Home onNavigate={setCurrentPage} />;
       case 'shop':
-        // UPDATE: Shop ko 'onNavigate' pass kiya taaki wo page badal sake
         return <Shop onNavigate={setCurrentPage} />;
       case 'customize':
         return <CustomizeBox />;
@@ -76,23 +76,23 @@ function AppContent() {
         return <Contact />;
       case 'cart':
         return <Cart />;
+      case 'login':           // New Route
+        return <Login onNavigate={setCurrentPage} />;
+      case 'my-orders':       // New Route
+        return <MyOrders onNavigate={setCurrentPage} />;
       default:
         return <Home onNavigate={setCurrentPage} />;
     }
   };
 
   return (
-    // Clean, Fast, and Beautiful Pastel Gradient
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#fff0f5] via-[#fff5f7] to-[#fff5e6] font-sans text-gray-800 selection:bg-pink-100">
       
       <div className="flex flex-col min-h-screen">
         <Header currentPage={currentPage} onNavigate={setCurrentPage} />
-        
-        {/* Added smooth fade-in animation for page transitions */}
         <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
           {renderPage()}
         </main>
-        
         <Footer />
       </div>
       
