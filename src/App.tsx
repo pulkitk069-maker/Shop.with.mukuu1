@@ -67,6 +67,7 @@ function AppContent() {
       case 'home':
         return <Home onNavigate={setCurrentPage} />;
       case 'shop':
+        // Updated: Shop ko navigation power di (Buy Now ke liye)
         return <Shop onNavigate={setCurrentPage} />;
       case 'customize':
         return <CustomizeBox />;
@@ -75,10 +76,11 @@ function AppContent() {
       case 'contact':
         return <Contact />;
       case 'cart':
-        return <Cart />;
-      case 'login':           // New Route
+        // Updated: Cart ko navigation power di (Login ke liye)
+        return <Cart onNavigate={setCurrentPage} />;
+      case 'login':
         return <Login onNavigate={setCurrentPage} />;
-      case 'my-orders':       // New Route
+      case 'my-orders':
         return <MyOrders onNavigate={setCurrentPage} />;
       default:
         return <Home onNavigate={setCurrentPage} />;
@@ -90,9 +92,11 @@ function AppContent() {
       
       <div className="flex flex-col min-h-screen">
         <Header currentPage={currentPage} onNavigate={setCurrentPage} />
+        
         <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
           {renderPage()}
         </main>
+        
         <Footer />
       </div>
       
