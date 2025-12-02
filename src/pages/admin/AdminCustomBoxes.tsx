@@ -3,7 +3,24 @@ import { Gift, Eye } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
-import { supabase, CustomGiftBox } from '../../lib/supabase';
+// Firebase Imports
+import { collection, getDocs, updateDoc, doc, query, orderBy } from 'firebase/firestore';
+import { db } from '../../firebase';
+
+// Interface define kar rahe hain
+interface CustomGiftBox {
+  id: string;
+  created_at: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  box_theme: string;
+  budget_range: string;
+  selected_items?: string[];
+  custom_message?: string;
+  status: string;
+  updated_at?: string;
+}
 
 export function AdminCustomBoxes() {
   const [customBoxes, setCustomBoxes] = useState<CustomGiftBox[]>([]);
@@ -15,21 +32,44 @@ export function AdminCustomBoxes() {
   }, []);
 
   const loadCustomBoxes = async () => {
-    const { data } = await supabase
-      .from('custom_gift_boxes')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (data) setCustomBoxes(data);
+    try {
+      // Firebase se data lana (Newest first)
+      const boxesRef = collection(db, 'custom_gift_boxes');
+      const q = query(boxesRef, orderBy('created_at', 'desc'));
+      
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as CustomGiftBox[];
+      
+      setCustomBoxes(data);
+    } catch (error) {
+      console.error("Error loading boxes, trying fallback:", error);
+      // Fallback: Agar index error aaye to bina sort ke load karo
+      try {
+        const snapshot = await getDocs(collection(db, 'custom_gift_boxes'));
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as CustomGiftBox[];
+        setCustomBoxes(data);
+      } catch (e) {
+        console.error("Failed to load custom boxes");
+      }
+    }
   };
 
   const updateStatus = async (id: string, status: string) => {
     try {
-      const { error } = await supabase
-        .from('custom_gift_boxes')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', id);
-      if (error) throw error;
-      loadCustomBoxes();
+      // Firebase update
+      const boxRef = doc(db, 'custom_gift_boxes', id);
+      await updateDoc(boxRef, { 
+        status, 
+        updated_at: new Date().toISOString() 
+      });
+
+      loadCustomBoxes(); // List refresh
       if (selectedBox?.id === id) {
         setSelectedBox({ ...selectedBox, status } as CustomGiftBox);
       }
