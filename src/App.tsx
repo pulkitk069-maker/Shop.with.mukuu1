@@ -41,7 +41,8 @@ function AppContent() {
     const renderAdminPage = () => {
       switch (adminPage) {
         case 'dashboard':
-          return <AdminDashboard />;
+          // UPDATE: Yahan humne 'onNavigate' pass kiya hai
+          return <AdminDashboard onNavigate={setAdminPage} />;
         case 'products':
           return <AdminProducts />;
         case 'orders':
@@ -49,7 +50,7 @@ function AppContent() {
         case 'custom-boxes':
           return <AdminCustomBoxes />;
         default:
-          return <AdminDashboard />;
+          return <AdminDashboard onNavigate={setAdminPage} />;
       }
     };
 
@@ -110,5 +111,3 @@ function App() {
 }
 
 export default App;
-
-
