@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { ShoppingCart, Menu, X, Heart, User, LogIn } from 'lucide-react';
+import { ShoppingCart, Menu, X, Heart, User, LogIn, Lock } from 'lucide-react'; // Lock aur LogIn icon import kiye
 import { useCart } from '../../context/CartContext';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext'; // Auth state ke liye
 
 interface HeaderProps {
   currentPage: string;
@@ -74,17 +74,26 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
                 </span>
               )}
             </button>
+            
+            {/* Admin Button (Lock Icon) */}
+            <button
+              onClick={() => onNavigate('admin')}
+              className="p-2 hover:bg-pink-50 rounded-full transition-colors hidden md:block"
+              title="Admin Panel"
+            >
+              <Lock className="w-6 h-6 text-gray-600" />
+            </button>
 
-            {/* Smart User Button */}
+            {/* Customer User Button */}
             <button
               onClick={handleUserNavigation}
               className="p-2 hover:bg-pink-50 rounded-full transition-colors hidden md:block"
               title={user ? "My Orders" : "Login"}
             >
               {user ? (
-                <User className="w-6 h-6 text-gray-600" />
+                <User className="w-6 h-6 text-gray-600" /> // Login hai toh User icon
               ) : (
-                <LogIn className="w-6 h-6 text-gray-600" />
+                <LogIn className="w-6 h-6 text-gray-600" /> // Nahi hai toh LogIn icon
               )}
             </button>
 
@@ -122,10 +131,19 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
               </button>
             ))}
             
-            {/* Mobile Menu Smart Button */}
             <button
               onClick={() => {
-                handleUserNavigation();
+                onNavigate('admin'); // Mobile Admin Link
+                setIsMenuOpen(false);
+              }}
+              className="block w-full text-left px-4 py-3 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              Admin Panel
+            </button>
+
+            <button
+              onClick={() => {
+                handleUserNavigation(); // Mobile User Link
                 setIsMenuOpen(false);
               }}
               className="block w-full text-left px-4 py-3 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors"
@@ -137,4 +155,4 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
       )}
     </header>
   );
-                  }
+}
