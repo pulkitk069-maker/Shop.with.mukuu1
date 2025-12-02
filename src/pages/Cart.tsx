@@ -5,7 +5,6 @@ import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { useCart } from '../context/CartContext';
-// Firebase Imports
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -31,7 +30,6 @@ export function Cart() {
         price: item.price,
       }));
 
-      // Firebase mein Order save karna
       await addDoc(collection(db, 'orders'), {
         customer_name: customerInfo.name,
         customer_email: customerInfo.email,
@@ -41,7 +39,7 @@ export function Cart() {
         total_amount: getTotalPrice(),
         notes: customerInfo.notes,
         status: 'pending',
-        created_at: new Date().toISOString(), // Ye zaroori hai sorting ke liye
+        created_at: new Date().toISOString(),
       });
 
       alert('Order placed successfully! We will contact you soon.');
@@ -49,7 +47,6 @@ export function Cart() {
       setShowCheckout(false);
       setCustomerInfo({ name: '', email: '', phone: '', address: '', notes: '' });
 
-      // WhatsApp par le jana
       window.open(
         `https://wa.me/919876543210?text=Hi! I just placed an order on shop.with.mukuu. Order total: ₹${getTotalPrice()}`,
         '_blank'
@@ -62,6 +59,7 @@ export function Cart() {
     }
   };
 
+  // --- YE WALA PART FIXED HAI ---
   if (cart.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -71,13 +69,15 @@ export function Cart() {
           <p className="text-gray-600 mb-6">
             Start shopping and add items to your cart
           </p>
-          <Button onClick={() => window.history.back()}>
-            Continue Shopping
+          {/* Yahan change kiya hai: Ab ye Home page par le jayega */}
+          <Button onClick={() => window.location.href = '/'}>
+            Start Shopping
           </Button>
         </Card>
       </div>
     );
   }
+  // -----------------------------
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
