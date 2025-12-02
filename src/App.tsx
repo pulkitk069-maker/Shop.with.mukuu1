@@ -17,17 +17,41 @@ import { AdminProducts } from './pages/admin/AdminProducts';
 import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminCustomBoxes } from './pages/admin/AdminCustomBoxes';
 
+// Animated Butterfly Component
+const Butterfly = ({ style }: { style: React.CSSProperties }) => (
+  <div className="absolute opacity-40 pointer-events-none animate-float" style={style}>
+    🦋
+  </div>
+);
+
+// Animated Flower Component
+const Flower = ({ style }: { style: React.CSSProperties }) => (
+  <div className="absolute opacity-30 pointer-events-none animate-spin-slow" style={style}>
+    🌸
+  </div>
+);
+
 function AppContent() {
   const [currentPage, setCurrentPage] = useState('home');
   const [adminPage, setAdminPage] = useState('dashboard');
   const { user, loading } = useAuth();
 
+  // Background Elements (Randomly positioned)
+  const bgElements = [
+    <Butterfly key="b1" style={{ top: '10%', left: '5%', animationDelay: '0s' }} />,
+    <Flower key="f1" style={{ top: '15%', right: '10%', animationDuration: '10s' }} />,
+    <Butterfly key="b2" style={{ bottom: '20%', left: '15%', animationDelay: '2s' }} />,
+    <Flower key="f2" style={{ bottom: '10%', right: '5%', animationDuration: '12s' }} />,
+    <Butterfly key="b3" style={{ top: '40%', right: '20%', animationDelay: '4s' }} />,
+  ];
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-rose-100 to-orange-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+      <div className="min-h-screen bg-gradient-to-br from-[#fff0f5] to-[#fff5e6] flex items-center justify-center relative overflow-hidden">
+        {bgElements}
+        <div className="text-center z-10">
+          <div className="w-16 h-16 border-4 border-[#ff6b81] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-dancing text-xl">Loading Magic...</p>
         </div>
       </div>
     );
@@ -80,10 +104,20 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header currentPage={currentPage} onNavigate={setCurrentPage} />
-      <main className="flex-1">{renderPage()}</main>
-      <Footer />
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#fff0f5] via-[#fff5f7] to-[#fff5e6] font-sans text-gray-800 relative overflow-x-hidden">
+      {/* Background Decor */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        {bgElements}
+      </div>
+
+      <div className="z-10 flex flex-col min-h-screen">
+        <Header currentPage={currentPage} onNavigate={setCurrentPage} />
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+          {renderPage()}
+        </main>
+        <Footer />
+      </div>
+      
       <WhatsAppButton />
     </div>
   );
@@ -100,3 +134,5 @@ function App() {
 }
 
 export default App;
+
+
